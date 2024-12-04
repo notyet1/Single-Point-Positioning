@@ -1,0 +1,17 @@
+﻿  test.cpp
+D:\code\C&C++\Single-Point Positioning\Single-Point Positioning\time.h(96,26): warning C4244: “初始化”: 从“double”转换到“unsigned long”，可能丢失数据
+  (编译源文件“test.cpp”)
+  
+D:\code\C&C++\Single-Point Positioning\Single-Point Positioning\time.h(98,26): warning C4244: “初始化”: 从“double”转换到“unsigned long”，可能丢失数据
+  (编译源文件“test.cpp”)
+  
+D:\code\C&C++\Single-Point Positioning\Single-Point Positioning\time.h(168,36): warning C4244: “=”: 从“double”转换到“unsigned short”，可能丢失数据
+  (编译源文件“test.cpp”)
+  
+D:\code\C&C++\Single-Point Positioning\Single-Point Positioning\time.h(186,36): warning C4244: “=”: 从“double”转换到“long”，可能丢失数据
+  (编译源文件“test.cpp”)
+  
+D:\code\C&C++\Single-Point Positioning\Single-Point Positioning\func.h(149,37): warning C4552: ”*“: 未使用表达式结果
+  (编译源文件“test.cpp”)
+  
+  Single-Point Positioning.vcxproj -> D:\code\C&C++\Single-Point Positioning\x64\Debug\Single-Point Positioning.exe
