@@ -27,19 +27,19 @@ public:
 	int getCols() const {
 		return cols;
 	}	
-	// ¶¯Ì¬µ÷Õû¾ØÕó´óĞ¡
+	// åŠ¨æ€è°ƒæ•´çŸ©é˜µå¤§å°
 	void resizeMatrix(int r, int c) {
 		rows = r;
 		cols = c;
-		data.resize(r); // µ÷ÕûĞĞÊı
+		data.resize(r); // è°ƒæ•´è¡Œæ•°
 		for (int i = 0; i < r; ++i) {
-			data[i].resize(c, 0); // µ÷ÕûÃ¿ĞĞµÄÁĞÊı£¬²¢³õÊ¼»¯Îª 0
+			data[i].resize(c, 0); // è°ƒæ•´æ¯è¡Œçš„åˆ—æ•°ï¼Œå¹¶åˆå§‹åŒ–ä¸º 0
 		}
 	}
-	//ÉèÖÃ¾ØÕó
+	//è®¾ç½®çŸ©é˜µ
 	void setMatrix(int r, int c, double* arr) {
-		rows = r; // ¸üĞÂ¾ØÕóĞĞÊı
-		cols = c; // ¸üĞÂ¾ØÕóÁĞÊı
+		rows = r; // æ›´æ–°çŸ©é˜µè¡Œæ•°
+		cols = c; // æ›´æ–°çŸ©é˜µåˆ—æ•°
 		resizeMatrix(r, c);
 		for (int i = 0; i < r; i++) {
 			for (int j = 0; j < c; j++) {
@@ -47,7 +47,7 @@ public:
 			}
 		}
 	}
-	// Çå¿Õ¾ØÕó£¬½«ËùÓĞÔªËØÉèÖÃÎª0
+	// æ¸…ç©ºçŸ©é˜µï¼Œå°†æ‰€æœ‰å…ƒç´ è®¾ç½®ä¸º0
 	void clear() {
 		for (int i = 0; i < rows; ++i) {
 			for (int j = 0; j < cols; ++j) {
@@ -55,13 +55,13 @@ public:
 			}
 		}
 	}
-	// ĞŞ¸Ä¾ØÕóÖĞµÄÄ³¸öÔªËØ
+	// ä¿®æ”¹çŸ©é˜µä¸­çš„æŸä¸ªå…ƒç´ 
 	void setElement(int r, int c, double value) {
 		if (r >= 0 && r < rows && c >= 0 && c < cols) {
 			data[r][c] = value;
 		}
 	}
-	//ÊäÈë¾ØÕó
+	//è¾“å…¥çŸ©é˜µ
 	void Matrix_Input() {
 		for (int i = 0; i < this->getRows(); i++) {
 			for (int j = 0; j < this->getCols(); j++) {
@@ -71,7 +71,7 @@ public:
 			}
 		}
 	}
-	//´òÓ¡¾ØÕó
+	//æ‰“å°çŸ©é˜µ
 	void display() const {
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
@@ -80,27 +80,27 @@ public:
 			cout << endl;
 		}
 	}
-	//ÉèÖÃµ¥Î»¾ØÕó
+	//è®¾ç½®å•ä½çŸ©é˜µ
 	void setIdentity() {
 		for (int i = 0; i < this->cols; i++) {
 			this->setElement(i, i, 1.0);
 		}
 	}
-	//ÉèÖÃ¶Ô½Ç¾ØÕó
+	//è®¾ç½®å¯¹è§’çŸ©é˜µ
 	void setDiagonal(double x) {
 		for (int i = 0; i < this->cols; i++) {
 			this->setElement(i, i, x);
 		}
 	}
 
-	// »ñÈ¡¾ØÕóÖĞµÄÄ³¸öÔªËØ
+	// è·å–çŸ©é˜µä¸­çš„æŸä¸ªå…ƒç´ 
 	double getElement(int r, int c) const {
 		if (r >= 0 && r < rows && c >= 0 && c < cols) {
 			return data[r][c];
 		}
 		return 0; 
 	}
-	//¾ØÕó¼Ó·¨
+	//çŸ©é˜µåŠ æ³•
 	Matrix operator+(const Matrix& other) const {
 		if (rows != other.rows || cols != other.cols) {
 			throw invalid_argument("error!");
@@ -114,7 +114,7 @@ public:
 		}
 		return result;
 	}
-	//¾ØÕó¼õ·¨
+	//çŸ©é˜µå‡æ³•
 	Matrix operator-(const Matrix& other) const {
 		if (rows != other.rows || cols != other.cols) {
 			throw invalid_argument("error!");
@@ -128,7 +128,7 @@ public:
 		}
 		return result;
 	}
-	//ÊµÊıÓë¾ØÕóÏà³Ë
+	//å®æ•°ä¸çŸ©é˜µç›¸ä¹˜
 	Matrix operator*(double scalar) const {
 		Matrix result(rows, cols);
 		for (int i = 0; i < rows; ++i) {
@@ -138,7 +138,7 @@ public:
 		}
 		return result;
 	}
-	//¾ØÕóÓë¾ØÕóÏà³Ë(ÖØÔØ)
+	//çŸ©é˜µä¸çŸ©é˜µç›¸ä¹˜(é‡è½½)
 	Matrix operator*(const Matrix& other) const {
 		if (cols != other.rows) {
 			throw invalid_argument("error!");
@@ -155,7 +155,7 @@ public:
 		}
 		return result;
 	}
-	//¾ØÕó×ªÖÃ
+	//çŸ©é˜µè½¬ç½®
 	Matrix transpose() const {
 		Matrix result(cols, rows);
 		for (int i = 0; i < rows; i++) {
@@ -165,7 +165,7 @@ public:
 		}
 		return result;
 	}
-	// ½»»»¾ØÕóÖĞµÄÁ½ĞĞ
+	// äº¤æ¢çŸ©é˜µä¸­çš„ä¸¤è¡Œ
 	void swapRows(int row1, int row2) {
 		if (row1 >= 0 && row1 < rows && row2 >= 0 && row2 <= rows) {
 			for (int j = 0; j < cols; ++j) {
@@ -175,20 +175,20 @@ public:
 			}
 		}
 		else {
-			cout << "ĞĞË÷Òı³¬³ö·¶Î§£¬ÎŞ·¨½»»»£¡" << endl;
+			cout << "è¡Œç´¢å¼•è¶…å‡ºèŒƒå›´ï¼Œæ— æ³•äº¤æ¢ï¼" << endl;
 		}
 	}
-	//¾ØÕóÇóÄæ
+	//çŸ©é˜µæ±‚é€†
 	Matrix inverse() const {
 		if (rows != cols) {
-			cout << "ĞĞÁĞÊı²»µÈÎŞ·¨ÇóÄæ" << endl;
+			cout << "è¡Œåˆ—æ•°ä¸ç­‰æ— æ³•æ±‚é€†" << endl;
 		}
-		//´´½¨µ¥Î»¾ØÕó
+		//åˆ›å»ºå•ä½çŸ©é˜µ
 		vector<double>m(rows*cols,0.0);
 		Matrix identity;
 		identity.setMatrix(rows, cols, m.data());
 		identity.setIdentity();
-		//¸´ÖÆÔ­Ê¼¾ØÕó
+		//å¤åˆ¶åŸå§‹çŸ©é˜µ
 		Matrix copy;
 		vector<double> flattened; 
 		for (int i = 0; i < this->rows; ++i) {
@@ -197,12 +197,12 @@ public:
 			}
 		}
 		copy.setMatrix(this->rows, this->cols, flattened.data());
-		//¸ßË¹-Ô¼µ©ÏûÔª·¨
+		//é«˜æ–¯-çº¦æ—¦æ¶ˆå…ƒæ³•
 		for (int i = 0; i < rows; i++) {
 			if (copy.getElement(i, i) == 0.0) {
 				int j = i + 1;
 				while (j < rows && copy.getElement(j, i) == 0.0) { j++; }
-				if (j == rows) {cout<<"¾ØÕó²»¿ÉÄæ!";}
+				if (j == rows) {cout<<"çŸ©é˜µä¸å¯é€†!";}
 				copy.swapRows(i, j); identity.swapRows(i,j);
 			}
 			double pivot = copy.getElement(i, i);
@@ -230,7 +230,7 @@ public:
 
 
 	
-	//ÕıÔò»¯
+	//æ­£åˆ™åŒ–
 	Matrix regularizeMatrix( double lambda = 1e-8) {
 		
 
@@ -253,10 +253,10 @@ public:
 
 
 
-	// ¼ÆËã¾ØÕóµÄ¼£
+	// è®¡ç®—çŸ©é˜µçš„è¿¹
 	double trace() const {
 		if (rows != cols) {
-			cout << "¾ØÕó²»ÊÇ·½Õó£¬ÎŞ·¨¼ÆËã¼£¡£" << endl;
+			cout << "çŸ©é˜µä¸æ˜¯æ–¹é˜µï¼Œæ— æ³•è®¡ç®—è¿¹ã€‚" << endl;
 			return 0;
 		}
 
@@ -264,18 +264,18 @@ public:
 		for (int i = 0; i < rows; ++i) {
 			sum += data[i][i];
 		}
-		return sum;
+		return fabs(sum);
 	}
 };
 
 
-//¼ÓÈ¨×îĞ¡¶ş³Ë
+//åŠ æƒæœ€å°äºŒä¹˜
 Matrix reweightedLeastSquares(Matrix B,Matrix L,Matrix P) {
 	Matrix X_estimated;
-	X_estimated = (B.transpose() * P * B).inverse() * (B.transpose() * P * L);//X×îÓÅ¹À¼ÆÁ¿
+	X_estimated = (B.transpose() * P * B).inverse() * (B.transpose() * P * L);//Xæœ€ä¼˜ä¼°è®¡é‡
 	return X_estimated;
 }
-Matrix Identity(int row, int col) {//Éú³Éµ¥Î»¾ØÕó
+Matrix Identity(int row, int col) {//ç”Ÿæˆå•ä½çŸ©é˜µ
 	Matrix A(row, col);
 	for (int i = 0; i < A.getCols(); i++) {
 		A.setElement(i, i, 1.0);
