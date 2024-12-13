@@ -214,7 +214,7 @@ public:
 					//设置最大迭代次数7，精度评定
 					if (((abs(X.data[0][0]) < 1e-4 && abs(X.data[1][0]) < 1e-4 && abs(X.data[2][0]) < 1e-4)) || Iteration >= 7) {
 						GDOP = sqrt(Q.trace());
-						PDOP = sqrt(Q.trace() - Q.data[3][3] * Q.data[3][3]);
+						PDOP = sqrt(fabs(Q.trace() - Q.data[3][3] * Q.data[3][3]));
 						break;
 					}
 				}
@@ -303,7 +303,7 @@ public:
 					//设置最大迭代次数7，精度评定
 					if (((abs(X.data[0][0]) < 1e-4 && abs(X.data[1][0]) < 1e-4 && abs(X.data[2][0]) < 1e-4)) || Iteration >= 7) {
 						GDOP = sqrt(Q.trace());
-						PDOP = sqrt(Q.trace() - Q.data[3][3] * Q.data[3][3]);
+						PDOP = sqrt(fabs(Q.trace() - Q.data[3][3] * Q.data[3][3]));
 						break;
 					}
 				}
@@ -343,7 +343,7 @@ public:
 			bd_gps+= X.data[3][0];
 			//精度评定
 			GDOP = sqrt(Q.trace());
-			PDOP = sqrt(Q.trace() - Q.data[3][3] * Q.data[3][3]);
+			PDOP = sqrt(fabs(Q.trace() - Q.data[3][3] * Q.data[3][3]));
 			//输出接收机速度、钟漂及其精度信息
 			cout << "接收机速度:" << StationSpeed.x << "," << StationSpeed.y << "," << StationSpeed.z << endl;
 			cout << "接收机钟漂:" << bd_gps << endl;
@@ -353,7 +353,7 @@ public:
 			bd_bds += X.data[3][0];
 			//精度评定
 			GDOP = sqrt(Q.trace());
-			PDOP = sqrt(Q.trace() - Q.data[3][3] * Q.data[3][3]);
+			PDOP = sqrt(fabs(Q.trace() - Q.data[3][3] * Q.data[3][3]));
 			//输出接收机速度、钟漂及其精度信息
 			cout << "接收机速度:" << StationSpeed.x << "," << StationSpeed.y << "," << StationSpeed.z << endl;
 			cout << "接收机钟漂:" << bd_bds << endl;
@@ -490,7 +490,7 @@ public:
 				//设置最大迭代次数7，精度评定
 				if (((abs(X.data[0][0]) < 1e-4 && abs(X.data[1][0]) < 1e-4 && abs(X.data[2][0]) < 1e-4)) || Iteration >= 7) {
 					GDOP = sqrt(Q.trace());
-					PDOP = sqrt(Q.trace() - Q.data[3][3] * Q.data[3][3]);
+					PDOP = sqrt(fabs(Q.trace() - Q.data[3][3] * Q.data[3][3]));
 					break;
 				}
 			}
@@ -536,7 +536,7 @@ public:
 		bd_bds += DataNormalize(X.data[4][0]);
 		//精度评定
 		GDOP = sqrt(Q.trace());
-		PDOP = sqrt(Q.trace() - Q.data[3][3] * Q.data[3][3]);
+		PDOP = sqrt(fabs(Q.trace() - Q.data[3][3] * Q.data[3][3]));
 		//输出接收机速度、钟漂及其精度信息
 		cout << "接收机速度:" << StationSpeed.x << "," << StationSpeed.y << "," << StationSpeed.z << endl;
 		cout << "接收机钟漂 " << "GPS系统:" << bd_gps << " 北斗系统:" << bd_bds << endl;
