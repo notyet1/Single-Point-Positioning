@@ -5,13 +5,13 @@
 #include<string>
 
 using namespace std;
-/*ÈåÂÔÈÕ¶¨Òå ´Ó¹«ÔªÇ°4713Äê1ÔÂ1ÈÕÕıÎç¿ªÊ¼µÄÌìÊı*/
+/*å„’ç•¥æ—¥å®šä¹‰ ä»å…¬å…ƒå‰4713å¹´1æœˆ1æ—¥æ­£åˆå¼€å§‹çš„å¤©æ•°*/
 class JulianDay {
 public:
 
-	unsigned long day;//¾ßÌåµÄÌìÊı
-	long sn;//µ±Ç°ÌìµÄÃëÊı²¿·Ö
-	double tos;//µ±Ç°Ê±¼äµÄÑÇÃë²¿·Ö
+	unsigned long day;//å…·ä½“çš„å¤©æ•°
+	long sn;//å½“å‰å¤©çš„ç§’æ•°éƒ¨åˆ†
+	double tos;//å½“å‰æ—¶é—´çš„äºšç§’éƒ¨åˆ†
 	JulianDay(int a = 0, int b = 0, double c = 0) : day(a), sn(b), tos(c) {}
 
 	double JulianDay_Output() {
@@ -19,7 +19,7 @@ public:
 		return julianday;
 	}
 };
-/*¼ò»¯ÈåÂÔÈÕ ´Ó1858Äê11ÔÂ17ÈÕ×ÓÒ¹¿ªÊ¼µÄÌìÊı*/
+/*ç®€åŒ–å„’ç•¥æ—¥ ä»1858å¹´11æœˆ17æ—¥å­å¤œå¼€å§‹çš„å¤©æ•°*/
 class MJulianDay {
 public:
 
@@ -42,7 +42,7 @@ int daysInMonth(int month, int year) {
 	return days[month - 1];
 }
 
-/* Í¨ÓÃÊ±¼ä¶¨Òå*/
+/* é€šç”¨æ—¶é—´å®šä¹‰*/
 class  COMMONTIME{
 public:
 	unsigned short year;
@@ -52,7 +52,14 @@ public:
 	unsigned short minute;
 	double second;
 	COMMONTIME(int a = 0, int b = 0, int c = 0, int d = 0, int e = 0, double f = 0) :year(a), month(b), day(c), hour(d), minute(e), second(f) {}
-
+	bool operator==(const COMMONTIME& other) const {
+		return year == other.year &&
+			month == other.month &&
+			day == other.day &&
+			hour == other.hour &&
+			minute == other.minute &&
+			second == other.second;
+	}
 	void COMTPrint() {
 		std::cout << std::setw(4) << std::setfill('0') << year << "/"
 			<< std::setw(2) << std::setfill('0') << month << "/"
@@ -67,7 +74,7 @@ public:
 		for (unsigned short m = 1; m < month; ++m) {
 			days += daysPerMonth[m - 1];
 			if (m == 2 && isLeapYear(year)) {
-				days += 1; // ÈòÄê¶şÔÂ¼ÓÒ»Ìì
+				days += 1; // é—°å¹´äºŒæœˆåŠ ä¸€å¤©
 			}
 		}
 		days += day - 1;
@@ -75,7 +82,7 @@ public:
 		return days;
 	}
 	double COM2GPSTime() {
-		// GPSÊ±¼äÆğµã
+		// GPSæ—¶é—´èµ·ç‚¹
 		COMMONTIME gpsEpoch;
 		gpsEpoch.year = 1980;
 		gpsEpoch.month = 1;
@@ -92,7 +99,7 @@ public:
 		return dayOfYear + (hour + minute / 60.0 + second / 3600.0) / 24.0;
 	}
 	double operator-(COMMONTIME& object) {
-		unsigned long days1 = this->totalDays(); // ×Ô1970Äê1ÔÂ1ÈÕÒÔÀ´µÄÌìÊı
+		unsigned long days1 = this->totalDays(); // è‡ª1970å¹´1æœˆ1æ—¥ä»¥æ¥çš„å¤©æ•°
 		unsigned long seconds1 = days1 * 86400 + this->hour * 3600 + this->minute * 60 + this->second;
 		unsigned long days2 = object.totalDays();
 		unsigned long seconds2 = days2 * 86400 + object.hour * 3600 + object.minute * 60 + object.second;
@@ -104,29 +111,29 @@ COMMONTIME JulianDay2COM2024(double days) {
 	COMMONTIME ct;
 	ct.year = 2024;
 
-	int D = static_cast<int>(std::floor(days)); // ÕûÊı²¿·Ö¼´ÎªÌìÊı
-	double fractional = days - D; // Ğ¡Êı²¿·Ö¼´ÎªÊ±¼äµÄÑÇÃë²¿·Ö
+	int D = static_cast<int>(std::floor(days)); // æ•´æ•°éƒ¨åˆ†å³ä¸ºå¤©æ•°
+	double fractional = days - D; // å°æ•°éƒ¨åˆ†å³ä¸ºæ—¶é—´çš„äºšç§’éƒ¨åˆ†
 
-	// ¼ÆËã¾ßÌåÈÕÆÚ
+	// è®¡ç®—å…·ä½“æ—¥æœŸ
 	static const int daysInMonth[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
-	ct.month = 1; // ´Ó1ÔÂ¿ªÊ¼¼ÆËã
+	ct.month = 1; // ä»1æœˆå¼€å§‹è®¡ç®—
 	while (D > daysInMonth[ct.month - 1]) {
-		D -= daysInMonth[ct.month - 1]; // ¿Û³ıµ±Ç°ÔÂµÄÌìÊı
-		ct.month++; // ½øÈëÏÂÒ»¸öÔÂ
+		D -= daysInMonth[ct.month - 1]; // æ‰£é™¤å½“å‰æœˆçš„å¤©æ•°
+		ct.month++; // è¿›å…¥ä¸‹ä¸€ä¸ªæœˆ
 	}
-	ct.day = D; // Ê£ÓàÌìÊı¼´Îªµ±ÌìµÄÈÕÆÚ
+	ct.day = D; // å‰©ä½™å¤©æ•°å³ä¸ºå½“å¤©çš„æ—¥æœŸ
 
-	// ¼ÆËãÊ±·ÖÃë
-	double totalSeconds = fractional * 86400; // ½«Ğ¡Êı²¿·Ö×ª»»ÎªÃë
-	ct.hour = static_cast<unsigned short>(totalSeconds / 3600); // ¼ÆËãĞ¡Ê±
-	ct.minute = static_cast<unsigned short>((totalSeconds - ct.hour * 3600) / 60); // ¼ÆËã·ÖÖÓ
-	ct.second = totalSeconds - ct.hour * 3600 - ct.minute * 60; // ¼ÆËãÃë
+	// è®¡ç®—æ—¶åˆ†ç§’
+	double totalSeconds = fractional * 86400; // å°†å°æ•°éƒ¨åˆ†è½¬æ¢ä¸ºç§’
+	ct.hour = static_cast<unsigned short>(totalSeconds / 3600); // è®¡ç®—å°æ—¶
+	ct.minute = static_cast<unsigned short>((totalSeconds - ct.hour * 3600) / 60); // è®¡ç®—åˆ†é’Ÿ
+	ct.second = totalSeconds - ct.hour * 3600 - ct.minute * 60; // è®¡ç®—ç§’
 
 	return ct;
 }
 
-/*GPSÊ±¶¨Òå ÆğµãÊÇ1980Äê1ÔÂ6ÈÕ00Ê±00·Ö00Ãë£¬ÓÃÖÜºÍÖÜÄÚÃëÀ´±íÊ¾*/
+/*GPSæ—¶å®šä¹‰ èµ·ç‚¹æ˜¯1980å¹´1æœˆ6æ—¥00æ—¶00åˆ†00ç§’ï¼Œç”¨å‘¨å’Œå‘¨å†…ç§’æ¥è¡¨ç¤º*/
 class GPSTime
 {
 public:
@@ -139,15 +146,15 @@ public:
 double frac(double x) {
 	return x - int(x);
 }
-//ÈåÂÔÈÕ×ª¼ò»¯ÈåÂÔÈÕ
+//å„’ç•¥æ—¥è½¬ç®€åŒ–å„’ç•¥æ—¥
 double JulianDay2MJulianDay(double JD) {
 	return JD - 2400000.5;
 }
-//¼ò»¯ÈåÂÔÈÕ×ªÈåÂÔÈÕ
+//ç®€åŒ–å„’ç•¥æ—¥è½¬å„’ç•¥æ—¥
 double MJulianDay2JulianDay(double MJD) {
 	return MJD + 2400000.5;
 }
-//1.Í¨ÓÃÊ±µ½ÈåÂÔÈÕµÄ×ª»»
+//1.é€šç”¨æ—¶åˆ°å„’ç•¥æ—¥çš„è½¬æ¢
 void CommonTime2JulianDay(COMMONTIME ct, JulianDay& jd) {
 	int y = 0, m = 0;
 	y = (ct.month <= 2) ? (ct.year - 1) : ct.year;
@@ -157,7 +164,7 @@ void CommonTime2JulianDay(COMMONTIME ct, JulianDay& jd) {
 	jd.sn = int(frac(Day) * 86400.0);
 	jd.tos = frac(frac(Day) * 86400.0);
 }
-//2.ÈåÂÔÈÕ×ªÍ¨ÓÃÊ±
+//2.å„’ç•¥æ—¥è½¬é€šç”¨æ—¶
 void JulianDay2CommonTime(COMMONTIME& ct, JulianDay& jd) {
 	double x = jd.JulianDay_Output();
 	int a = int(x + 0.5);
@@ -172,29 +179,28 @@ void JulianDay2CommonTime(COMMONTIME& ct, JulianDay& jd) {
 	ct.minute = (jd.sn % 3600) / 60;
 	ct.second = jd.sn % 60 + jd.tos;
 }
-//3.GPSÊ±×ªÈåÂÔÈÕ
+//3.GPSæ—¶è½¬å„’ç•¥æ—¥
 void GPSTime2JulianDay(GPSTime gt, JulianDay& jd) {
 	double MJD = 44244 + gt.wn * 7 + gt.sn / 86400;
 	jd.day =int (MJulianDay2JulianDay(MJD));
 	jd.sn = int(frac(MJulianDay2JulianDay(MJD)) * 86400.0);
 	jd.tos = frac(frac(MJulianDay2JulianDay(MJD)) * 86400.0);
 }
-//4. ÈåÂÔÈÕµ½GPSÊ±
+//4. å„’ç•¥æ—¥åˆ°GPSæ—¶
 void JulianDay2GPSTime(JulianDay jd, GPSTime& gt) {
 	double MJD = JulianDay2MJulianDay(jd.JulianDay_Output());
 	gt.wn = int((MJD - 44244) / 7);
 	gt.sn = (MJD - 44244 - gt.wn * 7) * 86400;
 }
-//5. Í¨ÓÃÊ±µ½GPSÊ±
+//5. é€šç”¨æ—¶åˆ°GPSæ—¶
 void CommonTime2GPSTime(COMMONTIME ct, GPSTime& gt) {
 	JulianDay jd;
 	CommonTime2JulianDay(ct, jd);
 	JulianDay2GPSTime(jd, gt);
 }
-//6. GPSÊ±µ½Í¨ÓÃÊ±
+//6. GPSæ—¶åˆ°é€šç”¨æ—¶
 void GPSTime2CommonTime(COMMONTIME& ct, GPSTime gt) {
 	JulianDay jd;
 	GPSTime2JulianDay(gt, jd);
 	JulianDay2CommonTime(ct, jd);
 }
-//Í¨ÓÃÊ±×ªÄê»ıÈÕ
