@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include<iostream>
 #include<string>
 #include <algorithm> 
@@ -23,6 +23,7 @@ public:
 	int bdsnum;
 	CRDCARTESIAN Station;//测站坐标 APPROX POSITION XYZ 
 	CRDCARTESIAN StationSpeed;//测站速度
+	CRDCARTESIAN Station_original;
 	//接收机钟差δ𝑡𝑖(m)
 	double bu_gps;
 	double bu_bds;
@@ -42,22 +43,43 @@ public:
 	//精度因子
 	double GDOP;
 	double PDOP;
+	//平面RMSE
+	double RMSE_Horizontal;
+	//高程RMSE
+	double RMSE_Vertical;
 	//已选择的卫星数组
 	vector<SATELLITE>sel;
 	vector<SATELLITE>GPSS;
 	vector<SATELLITE>BDSS;
-	DATA():num(2880),tr(2024,7,27,0,0,0),Station(-2267796.9641, 5009421.6975, 3220952.5436) ,StationSpeed(0,0,0),bu_gps(0), bu_bds(0),gpsnum(0),bdsnum(0) {
+	//读取的伪距
+	int num_eph;
+	Ephemeris* eph;
+	DATA():num(2880),tr(2024,7,27,0,0,0),Station(-2267796.9641, 5009421.6975, 3220952.5436) ,StationSpeed(0,0,0),bu_gps(0), bu_bds(0),gpsnum(0),bdsnum(0) ,num_eph(2880) {
+		Station_original.x = Station.x;
+		Station_original.y = Station.y;
+		Station_original.z = Station.z;
 		sat = new SATELLITE [num];
+		eph = new Ephemeris[num_eph];
 	}
 	~DATA() {
 		delete [] sat;
 	}
+
+	//prn&toc转序号
+	int prntoc2I(string prn,COMMONTIME toc) {
+		SATELLITE it;
+		for (int i = 0; i < num;i++) {
+			if (sat[i].gmn.PRN == prn && sat[i].gmn.TOC == toc)return i;
+		}
+	}
+
 	//选择卫星
-	void SelectSatellite(string s) {
-		std::istringstream stream(s);
-		int number;
-		while (stream >> number) {
-			sel.push_back(sat[number-1]);
+	void SelectSatellite(const string& input ) {
+		stringstream ss(input);  
+		vector<string> prnArray;
+		string prn;
+		while (ss >> prn) {  
+			sel.push_back(sat[prntoc2I(prn,tr)]);
 			nums++;
 		}
 	}
@@ -89,7 +111,7 @@ public:
 		int hasbds = false;
 		for (SATELLITE sat : sel) {
 			if (sat.gmn.isGPS())hasgps = true;
-			else if(sat.gmn.isBDS())hasbds = true;
+			else if (sat.gmn.isBDS())hasbds = true;
 			if (hasgps && hasbds) return false;
 		}
 		return true;
@@ -98,13 +120,28 @@ public:
 	void DATA_INIT_SSP() {
 		l_.resize(nums); m_.resize(nums); n_.resize(nums);
 		B_.resize(nums*4); W_.resize(nums); P_.resize(nums*nums);
-	
+		for (int i = 0; i < nums; i++) {
+			if (sel[i].gmn.isGPS()) {
+				sel[i].rho = eph[0].GPS[prn2I(sel[i].gmn.PRN)];
+			}
+			if (sel[i].gmn.isBDS()) {
+				sel[i].rho = eph[0].BDS[prn2I(sel[i].gmn.PRN)];
+			}
+	}
 		/*l_.clear(); m_.clear(); n_.clear(),B_.clear(),W_.clear(),P_.clear();
 		W.clear(); B.clear(); P.clear(); Q.clear(); X.clear();*/
 	}
 	void DATA_INIT_CSP() {
 		l_.resize(nums); m_.resize(nums); n_.resize(nums);
 		B_.resize(nums * 5); W_.resize(nums); P_.resize(nums * nums);
+		for (int i = 0; i < nums; i++) {
+			if (sel[i].gmn.isGPS()) {
+				sel[i].rho = eph[0].GPS[prn2I(sel[i].gmn.PRN)];
+			}
+			if (sel[i].gmn.isBDS()) {
+				sel[i].rho = eph[0].BDS[prn2I(sel[i].gmn.PRN)];
+			}
+		}
 	}
 
 	//单系统单点定位
@@ -112,6 +149,9 @@ public:
 		vector<double> xUpdates;
 		vector<double> yUpdates;
 		vector<double> zUpdates;
+		vector<double> xIteration;
+		vector<double> yIteration;
+		vector<double> zIteration;
 		ofstream outFile("XYZerror.csv");
 		outFile << "X_error,Y_error,Z_error" << std::endl;
 		if (nums < 4) {
@@ -195,26 +235,31 @@ public:
 					P.setMatrix(nums, nums, P_.data());
 					//设置计算矩阵Q 4*4(用于精度评定)
 					Q_ = B.transpose() * B;
-					Q_ = Q_.regularizeMatrix(1e-8);
+					Q = Q_.regularizeMatrix(1e-8);
 					Q = Q_.inverse();
 					//最小二乘
 					X = reweightedLeastSquares(B, W, P);
 					//接收机坐标，钟差数值更新
 					double x_temp= Station.x, y_temp= Station.y, z_temp= Station.z;
-
 					Station.x += DataNormalize(X.data[0][0]);
 					Station.y += DataNormalize(X.data[1][0]);
 					Station.z += DataNormalize(X.data[2][0]);
 					bu_gps += DataNormalize(X.data[3][0]);
+					xIteration.push_back(Station.x);
+					yIteration.push_back(Station.y);
+					zIteration.push_back(Station.z);
 					xUpdates.push_back(Station.x-x_temp);
 					yUpdates.push_back(Station.y-y_temp);
 					zUpdates.push_back(Station.z-z_temp);
 					/*cout << "迭代次数：" << Iteration<< endl;
 					cout << Station.x << " " << Station.y << " " << Station.z;*/
-					//设置最大迭代次数7，精度评定
+					//设置最大迭代次数7，精度评定,计算RMSE
 					if (((abs(X.data[0][0]) < 1e-4 && abs(X.data[1][0]) < 1e-4 && abs(X.data[2][0]) < 1e-4)) || Iteration >= 7) {
 						GDOP = sqrt(Q.trace());
 						PDOP = sqrt(fabs(Q.trace() - Q.data[3][3] * Q.data[3][3]));
+						RMSE_Horizontal = GetRMSE_Horizontal(xIteration, yIteration, Station_original.x, Station_original.y);
+						RMSE_Vertical = GetRMSE_Vertical(zIteration, Station_original.z);
+						
 						break;
 					}
 				}
@@ -227,6 +272,7 @@ public:
 				cout << "定位坐标:" << Station.x << "," << Station.y << "," << Station.z << endl;
 				cout << "接收机钟差:" << bu_gps << endl;
 				cout << "精度信息 GDOP:" << GDOP << " PDOP:" << PDOP << endl;
+				cout << "RMSE 平面:"<<RMSE_Horizontal<<"高程:"<<RMSE_Vertical<<endl;
 			}
 			else if(sel[0].gmn.isBDS()) {
 				int Iteration = 0;
@@ -287,7 +333,7 @@ public:
 					P.setMatrix(nums, nums, P_.data());
 					//设置计算矩阵Q 4*4
 					Q_ = B.transpose() * B;
-					Q_ = Q_.regularizeMatrix(1e-8);
+					Q = Q_.regularizeMatrix(1e-8);
 					/*Q = Q_.inverse();*/
 					//最小二乘
 					X = reweightedLeastSquares(B, W, P);
@@ -300,10 +346,15 @@ public:
 					xUpdates.push_back(Station.x - x_temp);
 					yUpdates.push_back(Station.y - y_temp);
 					zUpdates.push_back(Station.z - z_temp);
+					xIteration.push_back(Station.x);
+					yIteration.push_back(Station.y);
+					zIteration.push_back(Station.z);
 					//设置最大迭代次数7，精度评定
 					if (((abs(X.data[0][0]) < 1e-4 && abs(X.data[1][0]) < 1e-4 && abs(X.data[2][0]) < 1e-4)) || Iteration >= 7) {
 						GDOP = sqrt(Q.trace());
 						PDOP = sqrt(fabs(Q.trace() - Q.data[3][3] * Q.data[3][3]));
+						RMSE_Horizontal = GetRMSE_Horizontal(xIteration, yIteration, Station_original.x, Station_original.y);
+						RMSE_Vertical = GetRMSE_Vertical(zIteration, Station_original.z);
 						break;
 					}
 				}
@@ -316,9 +367,11 @@ public:
 				cout << "定位坐标:" << Station.x << "," << Station.y << "," << Station.z << endl;
 				cout << "接收机钟差:" << bu_bds << endl;
 				cout << "精度信息 GDOP:" << GDOP << " PDOP:" << PDOP << endl;
+				cout << "RMSE 平面:" << RMSE_Horizontal << "高程:" << RMSE_Vertical << endl;
 			}
 		}
 	}
+
 	//单系统单点测速
 	void GetSSPST() {
 		W_.clear();  W.clear();
@@ -326,7 +379,6 @@ public:
 		for (int i = 0; i < nums; i++) {
 			sel[i].RO = sqrt((sel[i].xyz.x - Station.x) * (sel[i].xyz.x - Station.x) + (sel[i].xyz.y - Station.y) * (sel[i].xyz.y - Station.y) + (sel[i].xyz.z - Station.z) * (sel[i].xyz.z - Station.z));
 		}
-
 		//设置OMC向量矩阵W
 		for (int i = 0; i < nums; i++) {
 			double w = ((sel[i].xyz.x - Station.x) * (sel[i].xyzDot.x - StationSpeed.x) + (sel[i].xyz.y - Station.y) * (sel[i].xyzDot.y - StationSpeed.y) + (sel[i].xyz.z - Station.z) * (sel[i].xyzDot.z - StationSpeed.z)) / sel[i].RO + l_[i] * sel[i].xyzDot.x + m_[i] * sel[i].xyzDot.y + n_[i] * sel[i].xyzDot.z + c * sel[i].DEL_cld;
@@ -336,9 +388,9 @@ public:
 		//最小二乘
 		X = reweightedLeastSquares(B, W, P);
 		//接收机速度,钟漂数值更新,无须迭代计算
-		StationSpeed.x += X.data[0][0];
-		StationSpeed.y += X.data[1][0];
-		StationSpeed.z += X.data[2][0];
+		StationSpeed.x += DataNormalize(X.data[0][0]);
+		StationSpeed.y += DataNormalize(X.data[1][0]);
+		StationSpeed.z += DataNormalize(X.data[2][0]);
 		if (sel[0].gmn.isGPS()){
 			bd_gps+= X.data[3][0];
 			//精度评定
@@ -366,6 +418,9 @@ public:
 		vector<double> xUpdates;
 		vector<double> yUpdates;
 		vector<double> zUpdates;
+		vector<double> xIteration;
+		vector<double> yIteration;
+		vector<double> zIteration;
 		ofstream outFile("XYZerror.csv");
 		outFile << "X_error,Y_error,Z_error" << std::endl;
 		if (nums < 4) {
@@ -375,14 +430,11 @@ public:
 			int Iteration = 0;
 			while (1) {
 				Iteration++;
-				
 				double alpha;
-
 				//迭代计算参数
 				for (int i = 0; i < nums; i++) {
-					
 					double Del_t = 0.075;
-					double Iteration_count = 0;
+					double Iteration_count = 0;                                                                                                                  
 					if(sel[i].gmn.isGPS()){
 						while (1) {
 							Iteration_count++;
@@ -396,6 +448,7 @@ public:
 							sel[i].xyz.x = sel[i].xyz.x * cos(alpha) + sel[i].xyz.y * sin(alpha);
 							sel[i].xyz.y = -sel[i].xyz.x * sin(alpha) + sel[i].xyz.y * cos(alpha);
 							sel[i].RO = sqrt((sel[i].xyz.x - Station.x) * (sel[i].xyz.x - Station.x) + (sel[i].xyz.y - Station.y) * (sel[i].xyz.y - Station.y) + (sel[i].xyz.z - Station.z) * (sel[i].xyz.z - Station.z));
+							
 							Del_t = sel[i].RO / c;
 							bu_gps = sel[i].rho - sel[i].RO;//???
 							if (fabs(Del_t - Del_t_) <= 1e-12 || Iteration_count >= 6) { 
@@ -426,6 +479,7 @@ public:
 					sel[i].GetTROP(Station);
 				
 				}
+				
 				//更新GPSS和BDSS
 				SatelliteClassification(sel);
 				//设置方向余弦矩阵l m n
@@ -463,6 +517,7 @@ public:
 				}
 				for (int i = gpsnum; i < nums; i++) {
 					W_[i] = BDSS[i - gpsnum].rho - BDSS[i - gpsnum].RO - bu_bds + c * BDSS[i - gpsnum].DEL_tsv - BDSS[i - gpsnum].T_IONO - BDSS[i - gpsnum].DEL_trop;
+					/*cout << W_[i] << endl;*/
 				}
 				W.setMatrix(nums, 1, W_.data());
 				//设置权重经验矩阵P S*S
@@ -484,6 +539,10 @@ public:
 				Station.z += DataNormalize(X.data[2][0]);
 				bu_gps += DataNormalize(X.data[3][0]);
 				bu_bds += DataNormalize(X.data[4][0]);
+				/*cout << Station.x << " " << X.data[0][0] << endl;*/
+				xIteration.push_back(Station.x);
+				yIteration.push_back(Station.y);
+				zIteration.push_back(Station.z);
 				xUpdates.push_back(Station.x - x_temp);
 				yUpdates.push_back(Station.y - y_temp);
 				zUpdates.push_back(Station.z - z_temp);
@@ -491,6 +550,8 @@ public:
 				if (((abs(X.data[0][0]) < 1e-4 && abs(X.data[1][0]) < 1e-4 && abs(X.data[2][0]) < 1e-4)) || Iteration >= 7) {
 					GDOP = sqrt(Q.trace());
 					PDOP = sqrt(fabs(Q.trace() - Q.data[3][3] * Q.data[3][3]));
+					RMSE_Horizontal = GetRMSE_Horizontal(xIteration, yIteration, Station_original.x, Station_original.y);
+					RMSE_Vertical = GetRMSE_Vertical(zIteration, Station_original.z);
 					break;
 				}
 			}
@@ -503,6 +564,7 @@ public:
 			cout << "定位坐标:" << Station.x << "," << Station.y << "," << Station.z << endl;
 			cout << "接收机钟差 " <<"GPS系统:" << bu_gps << " 北斗系统:" <<bu_bds<<endl;
 			cout << "精度信息 GDOP:" << GDOP << " PDOP:" << PDOP << endl;
+			cout << "RMSE 平面:" << RMSE_Horizontal << "高程:" << RMSE_Vertical << endl;
 		}
 	}
 	//组合单点测速
@@ -559,7 +621,7 @@ public:
 			GetCSPST();
 		}
 	}
-	//文件读取
+	//导航文件读取
 	void FileRead_GMN(const char* FileName) {
 		ifstream file(FileName);
 		string line, s1, s2, s3, temp;
@@ -570,7 +632,8 @@ public:
 		if (!file.fail()) {
 			while (getline(file, line)) {
 				lineNumber++;
-				if (cot > 2880)break;
+				
+				if (cot > 20000)break;
 				s1 = line.substr(60);
 				s3 = line.substr(60, 20);
 				if (hdr_flag == 1) {
@@ -683,9 +746,55 @@ public:
 				
 			}
 			file.close();
-			cout << "文件已读取,请选择卫星:" << endl;
+			cout <<"导航文件已读取" << endl;
+			cout <<"请选择卫星:" << endl;
 		}
 		else { cout << "无法打开文件!" << endl; }
+		
+	}
+	//观测文件读取
+	void FileRead_GMO(const char* FileName) {
+		ifstream file(FileName);
+		string line,s1;
+		int lineNumber = 0, cot = -1;
+		int hdr_flag = 0;
+		int I = -1;
+		int i = 0;
+		if (!file.fail()) {
+			while (getline(file, line)) {
+				
+				
+				if(hdr_flag == 0){
+					s1 = line.substr(60, 13);
+					if (s1 == "END OF HEADER") {
+						hdr_flag = 1;
+						continue;
+					}
+				}
+				
+				else if (hdr_flag == 1) {
+					if (line[0] == '>') {
+						I++;
+						continue;
+					}
+					else if (line[0] == 'C' && isdigit(line[1]) && isdigit(line[2])) {
+						i = prn2I(line.substr(0, 3));
+						eph[I].BDS[i] = my_stod(line.substr(5, 12));
+						
+						continue;
+					}
+					else if (line[0] == 'G' && isdigit(line[1]) && isdigit(line[2])) {
+						i = prn2I(line.substr(0, 3));
+						eph[I].GPS[i] = my_stod(line.substr(5, 12));
+						continue;
+					}
+					else continue;
+				}
+			}
+			file.close();
+			cout << "观测文件已读取" << endl;
+		}
+		else { cout << "文件读取失败" << endl; }
 		
 	}
 };
