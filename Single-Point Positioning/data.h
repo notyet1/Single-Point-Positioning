@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #define c 2.99792458e8
 #define mu_GPS 3.986005e14
 #define mu_BDS 3.986004418e14
@@ -23,17 +23,31 @@
 #include"time.h"
 #include<vector>
 using namespace std;
+class Ephemeris {
+public:
+	double GPS[99];
+	double BDS[99];
+};
+
+//prn编码
+int prn2I(string prn){
+	if (prn.size() > 3)cout << "prn error!" << endl;
+	else return stoi(prn.substr(1,2));
+}
 //标准化数据
 double DataNormalize(double input) {
-	if (input == 0) return 0; 
+	if (input == 0) return 0;
 	double absInput = fabs(input);
-	
 	int scale = static_cast<int>(log10(absInput));
-
-	double normalizedData = absInput / pow(10, scale - 6);
+	double normalizedData = absInput / pow(10, scale);
+	if (normalizedData > 10) {
+		normalizedData /= 10;
+		++scale;
+	}
 
 	return (input < 0) ? -normalizedData : normalizedData;
 }
+
 double my_stod(const std::string& s) {
 	for (char C : s) {
 		if (!std::isspace(C)) {
@@ -42,6 +56,25 @@ double my_stod(const std::string& s) {
 	}
 	return 0.0;
 }
+
+double GetRMSE_Horizontal(vector<double> x,vector<double> y,double x_true,double y_true) {
+	double RMSE=0;
+	for (int i = 0; i < x.size();i++) {
+		RMSE +=( (x[i] - x_true) * (x[i] - x_true)+(y[i] - y_true) * (y[i] - y_true));
+	}
+	RMSE = sqrt(RMSE / x.size());
+	return RMSE;
+}
+double GetRMSE_Vertical(vector<double> z,double z_true) {
+	double RMSE=0;
+	for (int i = 0; i < z.size(); i++) {
+		RMSE += (z[i] - z_true) * (z[i] - z_true);
+	}
+	RMSE = sqrt(RMSE / z.size());
+	return RMSE;
+}
+
+double GetRMSE_Vertical();
 class IONOCORR {
 public:
 	//satellite transmitted terms
@@ -212,6 +245,8 @@ public:
 			//卫星钟速计算
 			double DEL_trDot = -2 * sqrt(mu_GPS) / (c * c) * gmn.e * gmn.SqrtA * cos(Ek) * EkDot;
 			DEL_tsvDot = gmn.ClkDrift + 2 * gmn.ClkDriftRate * (t.COM2GPSTime() - gmn.TOC.COM2GPSTime()) + DEL_trDot;
+			//计算伪距
+			rho = fabs(gmn.TOC - t) * c;
 		}
 		else {
 			//坐标计算
@@ -286,19 +321,21 @@ public:
 			//卫星钟差计算
 			double DEL_tr = -2 * sqrt(mu_BDS) / (c * c) * gmn.e * gmn.SqrtA * sin(Ek);
 			DEL_tsv = gmn.ClkBias + gmn.ClkDrift * (t.COM2GPSTime() - gmn.TOC.COM2GPSTime()) + gmn.ClkDriftRate * (t.COM2GPSTime() - gmn.TOC.COM2GPSTime()) * (t.COM2GPSTime() - gmn.TOC.COM2GPSTime()) + DEL_tr;
+			//卫星钟漂计算
+			DEL_cld = gmn.ClkDrift + 2 * gmn.ClkDriftRate * fabs(gmn.TOC - t);
 			//卫星钟速计算
 			double DEL_trDot = -2 * sqrt(mu_BDS) / (c * c) * gmn.e * gmn.SqrtA * cos(Ek) * EkDot;
 			DEL_tsvDot = gmn.ClkDrift + 2 * gmn.ClkDriftRate * (t.COM2GPSTime() - gmn.TOC.COM2GPSTime()) + DEL_trDot;
-
+			//计算伪距
+			rho = fabs(gmn.TOC - t) * c;
+			
 
 		}
 		// 计算站点的经度和纬度
 		lambda = atan2(Y_WUHN, X_WUHN); // 经度
 		phi = atan2(Z_WUHN, sqrt(X_WUHN * X_WUHN + Y_WUHN * Y_WUHN)); // 纬度
-		//计算伪距
-		rho = fabs(gmn.TOC - t) * c;
-	/*	cout << rho << "  ";*/
-		int l = 0;
+		
+	
 		
 	
 	}
@@ -314,7 +351,6 @@ public:
 		//cout << "ZkDot:" << fixed << setprecision(9) << xyzDot.z << endl;
 		cout << "钟差:" << endl;
 		cout << "DEL_tsv:" << fixed << setprecision(9) << DEL_tsv << endl;
-		/*cout << "DEL_tsvDot:" << fixed << setprecision(9) << DEL_tsvDot << endl;*/
 	}
 	//电离层延迟
 	void GetIONO(COMMONTIME t_,IONOCORR corr) {
